@@ -1,3 +1,5 @@
+zmodload zsh/zprof
+
 # PATH
 export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:/Users/masato.takayama/.antigravity/antigravity/bin:$PATH"
 
