@@ -8,6 +8,7 @@
 	email = 100172771+onikukiraii@users.noreply.github.com
 [core]
     pager = delta
+	excludesfile = ~/.config/git/ignore
 [interactive]
     diffFilter = delta --color-only
 [delta]
