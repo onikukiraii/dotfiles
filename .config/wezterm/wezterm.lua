@@ -4,11 +4,11 @@ local background = require("background")
 
 -- セッション保存・復元プラグイン
 local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
-resurrect.periodic_save()
+resurrect.state_manager.periodic_save()
 
 -- ウィンドウを閉じる前に自動保存
 wezterm.on("window-close-requested", function(window, pane)
-  resurrect.save_state(resurrect.workspace_state.get_workspace_state())
+  resurrect.state_manager.save_state(resurrect.workspace_state.get_workspace_state())
   return false
 end)
 

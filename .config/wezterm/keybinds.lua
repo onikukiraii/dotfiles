@@ -137,7 +137,7 @@ return {
       key = "S",
       mods = "LEADER|SHIFT",
       action = wezterm.action_callback(function(win, pane)
-        resurrect.save_state(resurrect.workspace_state.get_workspace_state())
+        resurrect.state_manager.save_state(resurrect.workspace_state.get_workspace_state())
         resurrect.window_state.save_window_action()
       end),
     },
@@ -149,14 +149,14 @@ return {
           local type = string.match(label, "^([^/]+)") -- "workspace" or "window"
           id = string.match(id, "([^/]+)$") -- session name
           if type == "workspace" then
-            local state = resurrect.load_state(id, "workspace")
+            local state = resurrect.state_manager.load_state(id, "workspace")
             resurrect.workspace_state.restore_workspace(state, {
               relative = true,
               restore_text = true,
               on_pane_restore = resurrect.tab_state.default_on_pane_restore,
             })
           elseif type == "window" then
-            local state = resurrect.load_state(id, "window")
+            local state = resurrect.state_manager.load_state(id, "window")
             resurrect.window_state.restore_window(pane:window(), state, {
               relative = true,
               restore_text = true,
@@ -164,6 +164,36 @@ return {
             })
           end
         end)
+      end),
+    },
+
+    -- プロジェクト用レイアウトを一発作成 (Leader + Shift + P)
+    {
+      key = "P",
+      mods = "LEADER|SHIFT",
+      action = wezterm.action_callback(function(window, pane)
+        local cwd_url = pane:get_current_working_dir()
+        local cwd = cwd_url and cwd_url.file_path or wezterm.home_dir
+        local vault_path = wezterm.home_dir .. "/Documents/valut"
+
+        -- 右側にclaude code用（20%、valut固定）
+        local right = pane:split({ direction = "Right", size = 0.2, cwd = vault_path })
+
+        -- 左側を左右に分割（左20%, 真ん中60%）
+        local middle = pane:split({ direction = "Right", size = 0.75, cwd = cwd })
+
+        -- 左側を上下に分割（上=lazygit, 下=terminal）
+        local left_bottom = pane:split({ direction = "Bottom", size = 0.5, cwd = cwd })
+
+        -- 真ん中を上下に分割（上=hx, 下=claude）
+        local middle_bottom = middle:split({ direction = "Bottom", size = 0.5, cwd = cwd })
+
+        -- 各パネルでコマンド実行
+        pane:send_text("lazygit\n")
+        -- left_bottom はterminal（空のまま）
+        middle:send_text("hx .\n")
+        middle_bottom:send_text("claude\n")
+        right:send_text("claude\n")
       end),
     },
 
