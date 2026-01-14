@@ -3,6 +3,10 @@ theme = "darcula-solid"
 [editor]
 # line-number = "relative"
 mouse = true
+clipboard-provider = "pasteboard"
+
+[editor.gutters]
+layout = ["diff", "diagnostics", "line-numbers", "spacer"]
 
 [editor.auto-save]
 after-delay.enable = true
@@ -15,8 +19,13 @@ select = "underline"
 
 [editor.file-picker]
 hidden = false
+git-ignore = false
 
 [keys.normal]
+y = ":clipboard-yank-join"
+p = ":clipboard-paste-after"
+P = ":clipboard-paste-before"
+d = [":clipboard-yank-join", "delete_selection"]
 C-y = [
   ':sh rm -f /tmp/yazi-chosen',
   ':insert-output yazi "%{buffer_name}" --chooser-file=/tmp/yazi-chosen',
@@ -24,3 +33,17 @@ C-y = [
   ':open %sh{cat /tmp/yazi-chosen}',
   ':redraw',
 ]
+C-g = [
+  ':write-all',
+  ':new',
+  ':insert-output lazygit',
+  ':buffer-close!',
+  ':redraw',
+  ':reload-all',
+]
+
+[keys.select]
+y = ":clipboard-yank-join"
+p = ":clipboard-paste-after"
+P = ":clipboard-paste-before"
+d = [":clipboard-yank-join", "delete_selection"]
