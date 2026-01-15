@@ -1,6 +1,8 @@
 [[language]]
 name = "python"
 language-servers = ["pyright", "ruff"]
+auto-format = true
+formatter = { command = "ruff", args = ["format", "-"] }
 
 [language-server.pyright]
 command = "pyright-langserver"
@@ -14,3 +16,70 @@ args = ["server"]
 name = "markdown"
 language-servers = ["marksman"]
 soft-wrap.enable = true
+
+# === Vue ===
+[[language]]
+name = "vue"
+language-servers = ["vue-language-server", "eslint"]
+auto-format = true
+formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "vue"] }
+
+[language-server.vue-language-server]
+command = "vue-language-server"
+args = ["--stdio"]
+
+[language-server.vue-language-server.config]
+typescript = { tsdk = "" }
+vue = { hybridMode = false }
+
+# === TypeScript ===
+[[language]]
+name = "typescript"
+language-servers = ["typescript-language-server", "eslint"]
+auto-format = true
+formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "typescript"] }
+
+[[language]]
+name = "tsx"
+language-servers = ["typescript-language-server", "eslint"]
+auto-format = true
+formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "typescript"] }
+
+[language-server.typescript-language-server]
+command = "typescript-language-server"
+args = ["--stdio"]
+
+# === JavaScript ===
+[[language]]
+name = "javascript"
+language-servers = ["typescript-language-server", "eslint"]
+auto-format = true
+formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "babel"] }
+
+# === ESLint LSP ===
+[language-server.eslint]
+command = "vscode-eslint-language-server"
+args = ["--stdio"]
+
+[language-server.eslint.config]
+validate = "on"
+experimental = { useFlatConfig = true }
+rulesCustomizations = []
+run = "onType"
+problems = { shortenToSingleLine = false }
+nodePath = ""
+
+[language-server.eslint.config.codeAction.showDocumentation]
+enable = true
+
+# === JSON ===
+[[language]]
+name = "json"
+auto-format = true
+formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "json"] }
+
+# === CSS ===
+[[language]]
+name = "css"
+auto-format = true
+formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "css"] }
