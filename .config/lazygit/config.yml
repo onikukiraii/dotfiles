@@ -5,6 +5,6 @@ git:
     - colorArg: always
       pager: delta --dark --paging=never
 os:
-  edit: 'hx {{filename}}'
-  editAtLine: 'hx {{filename}}:{{line}}'
+  edit: 'nvim {{filename}}'
+  editAtLine: 'nvim +{{line}} {{filename}}'
   editInTerminal: true

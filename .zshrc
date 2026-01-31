@@ -29,6 +29,18 @@ source <(carapace _carapace)
 # starship
 eval "$(starship init zsh)"
 
+# WezTerm semantic zones (for Leader + y to copy last command output)
+_wezterm_osc133_precmd() {
+  # D: 前のコマンドの終了, A: プロンプト開始
+  printf '\e]133;D\e\\\e]133;A\e\\'
+}
+_wezterm_osc133_preexec() {
+  # B: コマンド入力終了, C: コマンド実行開始
+  printf '\e]133;B\e\\\e]133;C\e\\'
+}
+precmd_functions+=(_wezterm_osc133_precmd)
+preexec_functions+=(_wezterm_osc133_preexec)
+
 # zsh plugins (cache brew prefix for performance)
 BREW_PREFIX=$(brew --prefix)
 source $BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh

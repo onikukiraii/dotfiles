@@ -2,53 +2,53 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
 
--- ペインサイズをパーセンテージで設定するヘルパー関数
-local function resize_pane_to_percent(target_percent)
-  return wezterm.action_callback(function(win, pane)
-    local tab = pane:tab()
-    local panes = tab:panes_with_info()
-    for _, p in ipairs(panes) do
-      if p.pane:pane_id() == pane:pane_id() then
-        local current_percent = p.width / tab:get_size().cols
-        local delta = math.floor((target_percent - current_percent) * tab:get_size().cols)
-        if delta > 0 then
-          win:perform_action(act.AdjustPaneSize({ "Right", delta }), pane)
-        elseif delta < 0 then
-          win:perform_action(act.AdjustPaneSize({ "Left", -delta }), pane)
-        end
-        break
-      end
-    end
-  end)
-end
-
--- ペインサイズを相対的にパーセンテージで調整するヘルパー関数
--- direction: "Left", "Right", "Up", "Down"
--- percent: 調整する割合（0.1 = 10%）
-local function adjust_pane_by_percent(direction, percent)
-  return wezterm.action_callback(function(win, pane)
-    local tab = pane:tab()
-    local tab_size = tab:get_size()
-    local delta
-    if direction == "Left" or direction == "Right" then
-      delta = math.floor(percent * tab_size.cols)
-    else
-      delta = math.floor(percent * tab_size.rows)
-    end
-    if delta > 0 then
-      win:perform_action(act.AdjustPaneSize({ direction, delta }), pane)
-    end
-  end)
-end
 
 -- モードごとの色設定
 local mode_colors = {
   copy_mode = { bg = "#e5c07b", fg = "#282c34", label = " COPY " },
   search_mode = { bg = "#61afef", fg = "#282c34", label = " SEARCH " },
   resize_pane = { bg = "#c678dd", fg = "#282c34", label = " RESIZE " },
-  activate_pane = { bg = "#98c379", fg = "#282c34", label = " PANE " },
-  resize_pane_percent = { bg = "#e06c75", fg = "#282c34", label = " SIZE% " },
 }
+
+-- カーソル色を変更するヘルパー
+local function set_cursor_color(window, color)
+  local overrides = window:get_config_overrides() or {}
+  overrides.colors = overrides.colors or {}
+  overrides.colors.cursor_bg = color.bg
+  overrides.colors.cursor_fg = color.fg
+  overrides.colors.cursor_border = color.bg
+  window:set_config_overrides(overrides)
+end
+
+-- カーソル色をリセットするヘルパー
+local function reset_cursor_color(window)
+  local overrides = window:get_config_overrides() or {}
+  if overrides.colors then
+    overrides.colors.cursor_bg = nil
+    overrides.colors.cursor_fg = nil
+    overrides.colors.cursor_border = nil
+  end
+  window:set_config_overrides(overrides)
+end
+
+-- key_tableをアクティブにしつつカーソル色を変更
+local function activate_mode(mode_name, one_shot)
+  local mode = mode_colors[mode_name]
+  return wezterm.action_callback(function(window, pane)
+    if mode then
+      set_cursor_color(window, mode)
+    end
+    window:perform_action(act.ActivateKeyTable({ name = mode_name, one_shot = one_shot or false }), pane)
+  end)
+end
+
+-- key_tableを抜けつつカーソル色をリセット
+local function exit_mode()
+  return wezterm.action_callback(function(window, pane)
+    reset_cursor_color(window)
+    window:perform_action("PopKeyTable", pane)
+  end)
+end
 
 -- Show which key table is active in the status area
 wezterm.on("update-right-status", function(window, pane)
@@ -64,23 +64,6 @@ wezterm.on("update-right-status", function(window, pane)
     table.insert(elements, { Attribute = { Intensity = "Bold" } })
     table.insert(elements, { Text = mode.label })
     table.insert(elements, "ResetAttributes")
-
-    -- 既存のオーバーライドを保持しつつカーソル色を追加
-    local overrides = window:get_config_overrides() or {}
-    overrides.colors = overrides.colors or {}
-    overrides.colors.cursor_bg = mode.bg
-    overrides.colors.cursor_fg = mode.fg
-    overrides.colors.cursor_border = mode.bg
-    window:set_config_overrides(overrides)
-  else
-    -- 通常時はカーソル色のみクリア（背景などは保持）
-    local overrides = window:get_config_overrides() or {}
-    if overrides.colors then
-      overrides.colors.cursor_bg = nil
-      overrides.colors.cursor_fg = nil
-      overrides.colors.cursor_border = nil
-    end
-    window:set_config_overrides(overrides)
   end
 
   window:set_right_status(wezterm.format(elements))
@@ -147,8 +130,15 @@ return {
     -- Shift+Enter で改行（CLIツール用） - kitty keyboard protocol対応
     { key = "Enter", mods = "SHIFT", action = act.SendString("\x1b[13;2u") },
 
-    -- コピーモード
-    { key = "[", mods = "LEADER", action = act.ActivateCopyMode },
+    -- コピーモード（カーソル色も変更）
+    {
+      key = "[",
+      mods = "LEADER",
+      action = wezterm.action_callback(function(window, pane)
+        set_cursor_color(window, mode_colors.copy_mode)
+        window:perform_action(act.ActivateCopyMode, pane)
+      end),
+    },
     -- 直前のコマンドと出力をコピー (Leader + y)
     {
       key = "y",
@@ -304,52 +294,27 @@ return {
     -- 壁紙をランダム変更 (Leader + b)
     { key = "b", mods = "LEADER", action = act.EmitEvent("change-wallpaper") },
 
-    -- ペインサイズをパーセンテージで設定 (Leader + % でプリセット選択モード)
-    { key = "%", mods = "LEADER", action = act.ActivateKeyTable({ name = "resize_pane_percent", one_shot = true }) },
-
-    -- キーテーブル用
-    { key = "s", mods = "LEADER", action = act.ActivateKeyTable({ name = "resize_pane", one_shot = false }) },
-    {
-      key = "a",
-      mods = "LEADER",
-      action = act.ActivateKeyTable({ name = "activate_pane", timeout_milliseconds = 1000 }),
-    },
+    -- キーテーブル用（リサイズモード）
+    { key = "s", mods = "LEADER", action = activate_mode("resize_pane") },
   },
   -- キーテーブル
   -- https://wezfurlong.org/wezterm/config/key-tables.html
   key_tables = {
     -- Paneサイズ調整 leader + s (ijkl: i=上, k=下, j=左, l=右)
-    -- Paneサイズ調整 leader + s (ijkl: i=上, k=下, j=左, l=右) - 10%ずつ調整
     resize_pane = {
-      { key = "j", action = adjust_pane_by_percent("Left", 0.1) },
-      { key = "l", action = adjust_pane_by_percent("Right", 0.1) },
-      { key = "i", action = adjust_pane_by_percent("Up", 0.1) },
-      { key = "k", action = adjust_pane_by_percent("Down", 0.1) },
+      { key = "j", action = act.AdjustPaneSize({ "Left", 5 }) },
+      { key = "l", action = act.AdjustPaneSize({ "Right", 5 }) },
+      { key = "i", action = act.AdjustPaneSize({ "Up", 3 }) },
+      { key = "k", action = act.AdjustPaneSize({ "Down", 3 }) },
+      -- Shift押しながらで大きく調整
+      { key = "j", mods = "SHIFT", action = act.AdjustPaneSize({ "Left", 15 }) },
+      { key = "l", mods = "SHIFT", action = act.AdjustPaneSize({ "Right", 15 }) },
+      { key = "i", mods = "SHIFT", action = act.AdjustPaneSize({ "Up", 10 }) },
+      { key = "k", mods = "SHIFT", action = act.AdjustPaneSize({ "Down", 10 }) },
 
-      -- Cancel the mode by pressing escape
-      { key = "Enter", action = "PopKeyTable" },
-      { key = "Escape", action = "PopKeyTable" },
-    },
-    activate_pane = {
-      { key = "j", action = act.ActivatePaneDirection("Left") },
-      { key = "l", action = act.ActivatePaneDirection("Right") },
-      { key = "i", action = act.ActivatePaneDirection("Up") },
-      { key = "k", action = act.ActivatePaneDirection("Down") },
-    },
-    -- ペインサイズをパーセンテージで設定 (Leader + %)
-    -- 数字キー1-9で10%-90%
-    resize_pane_percent = {
-      { key = "1", action = resize_pane_to_percent(0.1) },
-      { key = "2", action = resize_pane_to_percent(0.2) },
-      { key = "3", action = resize_pane_to_percent(0.3) },
-      { key = "4", action = resize_pane_to_percent(0.4) },
-      { key = "5", action = resize_pane_to_percent(0.5) },
-      { key = "6", action = resize_pane_to_percent(0.6) },
-      { key = "7", action = resize_pane_to_percent(0.7) },
-      { key = "8", action = resize_pane_to_percent(0.8) },
-      { key = "9", action = resize_pane_to_percent(0.9) },
-      -- キャンセル
-      { key = "Escape", action = "PopKeyTable" },
+      -- Cancel the mode by pressing escape（カーソル色もリセット）
+      { key = "Enter", action = exit_mode() },
+      { key = "Escape", action = exit_mode() },
     },
     -- copyモード leader + [ (ijkl: i=上, k=下, j=左, l=右)
     copy_mode = {
@@ -396,15 +361,39 @@ return {
       -- コピー
       { key = "y", mods = "NONE", action = act.CopyTo("Clipboard") },
 
-      -- コピーモードを終了
+      -- コピーモードを終了（カーソル色もリセット）
       {
         key = "Enter",
         mods = "NONE",
-        action = act.Multiple({ { CopyTo = "ClipboardAndPrimarySelection" }, { CopyMode = "Close" } }),
+        action = wezterm.action_callback(function(window, pane)
+          window:perform_action(act.Multiple({ { CopyTo = "ClipboardAndPrimarySelection" }, { CopyMode = "Close" } }), pane)
+          reset_cursor_color(window)
+        end),
       },
-      { key = "Escape", mods = "NONE", action = act.CopyMode("Close") },
-      { key = "c", mods = "CTRL", action = act.CopyMode("Close") },
-      { key = "q", mods = "NONE", action = act.CopyMode("Close") },
+      {
+        key = "Escape",
+        mods = "NONE",
+        action = wezterm.action_callback(function(window, pane)
+          window:perform_action(act.CopyMode("Close"), pane)
+          reset_cursor_color(window)
+        end),
+      },
+      {
+        key = "c",
+        mods = "CTRL",
+        action = wezterm.action_callback(function(window, pane)
+          window:perform_action(act.CopyMode("Close"), pane)
+          reset_cursor_color(window)
+        end),
+      },
+      {
+        key = "q",
+        mods = "NONE",
+        action = wezterm.action_callback(function(window, pane)
+          window:perform_action(act.CopyMode("Close"), pane)
+          reset_cursor_color(window)
+        end),
+      },
     },
   },
 }

@@ -4,6 +4,21 @@ language-servers = ["pyright", "ruff"]
 auto-format = true
 formatter = { command = "ruff", args = ["format", "-"] }
 
+# === Python Debugger (debugpy) ===
+# Docker使用時: :debug-remote localhost:5678 でアタッチ
+[language.debugger]
+name = "debugpy"
+transport = "stdio"
+command = "python3"
+args = ["-m", "debugpy.adapter"]
+
+# ローカル実行用テンプレート
+[[language.debugger.templates]]
+name = "launch"
+request = "launch"
+completion = [{ name = "entrypoint", completion = "filename", default = "." }]
+args = { mode = "debug", program = "{0}" }
+
 [language-server.pyright]
 command = "pyright-langserver"
 args = ["--stdio"]
@@ -20,28 +35,20 @@ soft-wrap.enable = true
 # === Vue ===
 [[language]]
 name = "vue"
-language-servers = ["vue-language-server", "eslint"]
+language-servers = ["typescript-language-server", "eslint", "tailwindcss-ls"]
 auto-format = true
 formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "vue"] }
-
-[language-server.vue-language-server]
-command = "vue-language-server"
-args = ["--stdio"]
-
-[language-server.vue-language-server.config]
-typescript = { tsdk = "" }
-vue = { hybridMode = false }
 
 # === TypeScript ===
 [[language]]
 name = "typescript"
-language-servers = ["typescript-language-server", "eslint"]
+language-servers = ["typescript-language-server", "eslint", "tailwindcss-ls"]
 auto-format = true
 formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "typescript"] }
 
 [[language]]
 name = "tsx"
-language-servers = ["typescript-language-server", "eslint"]
+language-servers = ["typescript-language-server", "eslint", "tailwindcss-ls"]
 auto-format = true
 formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "typescript"] }
 
@@ -49,10 +56,15 @@ formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/
 command = "typescript-language-server"
 args = ["--stdio"]
 
+[[language-server.typescript-language-server.config.plugins]]
+name = "@vue/typescript-plugin"
+location = "/Users/masato.takayama/.npm-global/lib/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin"
+languages = ["vue"]
+
 # === JavaScript ===
 [[language]]
 name = "javascript"
-language-servers = ["typescript-language-server", "eslint"]
+language-servers = ["typescript-language-server", "eslint", "tailwindcss-ls"]
 auto-format = true
 formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "babel"] }
 
@@ -81,5 +93,16 @@ formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/
 # === CSS ===
 [[language]]
 name = "css"
+language-servers = ["vscode-css-language-server", "tailwindcss-ls"]
 auto-format = true
 formatter = { command = "/Users/masato.takayama/.local/share/mise/installs/node/24.12.0/bin/npx", args = ["prettier", "--parser", "css"] }
+
+# === HTML ===
+[[language]]
+name = "html"
+language-servers = ["vscode-html-language-server", "tailwindcss-ls"]
+
+# === Tailwind CSS LSP ===
+[language-server.tailwindcss-ls]
+command = "tailwindcss-language-server"
+args = ["--stdio"]
