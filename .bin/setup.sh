@@ -78,6 +78,7 @@ install_macos_packages() {
 
     # Editor
     helix
+    neovim
 
   )
 
@@ -208,6 +209,7 @@ install_linux_pacman() {
     helix
     lazygit
     git-delta
+    neovim
     curl
     unzip
   )
@@ -246,6 +248,8 @@ install_linux_extra_tools() {
   if ! has mise; then
     info "Installing mise..."
     curl https://mise.run | sh
+    # PATHに追加（現在のセッションで使えるように）
+    export PATH="$HOME/.local/bin:$PATH"
   else
     success "mise already installed"
   fi
@@ -298,6 +302,18 @@ install_linux_extra_tools() {
     success "carapace already installed"
   fi
 
+  # neovim
+  if ! has nvim; then
+    info "Installing neovim..."
+    NVIM_VERSION=$(curl -s "https://api.github.com/repos/neovim/neovim/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
+    curl -Lo nvim-linux64.tar.gz "https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+    sudo tar -C /opt -xzf nvim-linux64.tar.gz
+    sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+    rm -f nvim-linux64.tar.gz
+  else
+    success "neovim already installed"
+  fi
+
   # zsh plugins (manual for non-Arch)
   install_zsh_plugins
 
@@ -323,6 +339,41 @@ install_zsh_plugins() {
   else
     success "zsh-syntax-highlighting already installed"
   fi
+}
+
+# =============================================================================
+# Claude Code インストール
+# =============================================================================
+install_claude_code() {
+  # Claude Code が既にインストールされているか確認
+  if has claude; then
+    success "Claude Code already installed"
+    return
+  fi
+
+  # mise のパスを確保
+  export PATH="$HOME/.local/bin:$PATH"
+
+  # Node.js が必要
+  if ! has node; then
+    info "Node.js not found, installing via mise..."
+    if has mise; then
+      mise use --global node@lts
+      eval "$(mise activate bash)"
+    else
+      warn "mise not found, please install Node.js manually"
+      return 1
+    fi
+  fi
+
+  if ! has npm; then
+    warn "npm not found, please install Node.js properly"
+    return 1
+  fi
+
+  info "Installing Claude Code..."
+  npm install -g @anthropic-ai/claude-code
+  success "Claude Code installed"
 }
 
 # =============================================================================
@@ -378,6 +429,41 @@ link_claude_config() {
 }
 
 # =============================================================================
+# Zshをデフォルトシェルに設定
+# =============================================================================
+setup_zsh_as_default() {
+  local current_shell
+  current_shell=$(basename "$SHELL")
+
+  if [[ "$current_shell" == "zsh" ]]; then
+    success "zsh is already the default shell"
+    return
+  fi
+
+  if ! has zsh; then
+    warn "zsh is not installed, skipping shell change"
+    return
+  fi
+
+  local zsh_path
+  zsh_path=$(which zsh)
+
+  # /etc/shells に zsh が登録されているか確認
+  if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
+    info "Adding $zsh_path to /etc/shells..."
+    echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
+  fi
+
+  info "Changing default shell to zsh..."
+  if chsh -s "$zsh_path"; then
+    success "Default shell changed to zsh"
+    info "Please log out and log back in for the change to take effect"
+  else
+    warn "Failed to change shell. You can manually run: chsh -s $zsh_path"
+  fi
+}
+
+# =============================================================================
 # メイン処理
 # =============================================================================
 main() {
@@ -407,8 +493,16 @@ main() {
   bash "$SCRIPT_DIR/install.sh"
 
   echo ""
-  info "Setting up Claude Code..."
+  info "Installing Claude Code..."
+  install_claude_code
+
+  echo ""
+  info "Setting up Claude Code config..."
   link_claude_config "$os"
+
+  echo ""
+  info "Setting up zsh as default shell..."
+  setup_zsh_as_default
 
   echo ""
   success "Setup completed!"
