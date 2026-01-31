@@ -29,6 +29,23 @@ detect_linux_distro() {
   fi
 }
 
+# WSL検出
+is_wsl() {
+  if grep -qi "microsoft\|wsl" /proc/version 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+# WindowsユーザーディレクトリをWSLパスで取得
+get_windows_home() {
+  local win_userprofile
+  win_userprofile=$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
+  if [[ -n "$win_userprofile" ]]; then
+    wslpath -u "$win_userprofile"
+  fi
+}
+
 # コマンドが存在するかチェック
 has() {
   command -v "$1" &>/dev/null
@@ -464,6 +481,43 @@ setup_zsh_as_default() {
 }
 
 # =============================================================================
+# WSL: Windows側の設定をリンク
+# =============================================================================
+setup_windows_configs() {
+  if ! is_wsl; then
+    return
+  fi
+
+  info "WSL detected, setting up Windows-side configurations..."
+
+  local win_home
+  win_home=$(get_windows_home)
+
+  if [[ -z "$win_home" ]]; then
+    warn "Could not detect Windows home directory"
+    return 1
+  fi
+
+  info "Windows home: $win_home"
+
+  # Windows側の .config ディレクトリ作成
+  local win_config="$win_home/.config"
+  mkdir -p "$win_config"
+
+  # WezTerm設定をリンク
+  if [[ -d "$DOTDIR/.config/wezterm" ]]; then
+    if [[ -L "$win_config/wezterm" ]] || [[ -d "$win_config/wezterm" ]]; then
+      info "Removing existing wezterm config..."
+      rm -rf "$win_config/wezterm"
+    fi
+    ln -snf "$DOTDIR/.config/wezterm" "$win_config/wezterm"
+    success "Linked WezTerm config to Windows"
+  fi
+
+  # 必要に応じて他のWindows側設定もここに追加可能
+}
+
+# =============================================================================
 # メイン処理
 # =============================================================================
 main() {
@@ -505,9 +559,17 @@ main() {
   setup_zsh_as_default
 
   echo ""
+  setup_windows_configs
+
+  echo ""
   success "Setup completed!"
   echo ""
-  info "Please restart your shell or run: source ~/.zshrc"
+
+  # zshがインストールされていれば即座に切り替え
+  if command -v zsh &>/dev/null; then
+    info "Switching to zsh..."
+    exec zsh -l
+  fi
 }
 
 # ヘルプ表示

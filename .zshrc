@@ -1,16 +1,18 @@
 # zmodload zsh/zprof  # プロファイリング時のみ有効化
 
 # PATH
-export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:/Users/masato.takayama/.antigravity/antigravity/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 
 # mise (runtime version manager)
-eval "$(mise activate zsh)"
+command -v mise &>/dev/null && eval "$(mise activate zsh)"
 
 # Directory environment
-eval "$(direnv hook zsh)"
+command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
 
 # Docker CLI completions
-fpath=(/Users/masato.takayama/.docker/completions $fpath)
+if [[ -d "$HOME/.docker/completions" ]]; then
+  fpath=("$HOME/.docker/completions" $fpath)
+fi
 autoload -Uz compinit
 # 1日1回だけ補完キャッシュを再生成（高速化）
 setopt extendedglob
@@ -22,12 +24,14 @@ fi
 unsetopt extendedglob
 
 # carapace (multi-shell completion)
-export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
-zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
-source <(carapace _carapace)
+if command -v carapace &>/dev/null; then
+  export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
+  zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+  source <(carapace _carapace)
+fi
 
 # starship
-eval "$(starship init zsh)"
+command -v starship &>/dev/null && eval "$(starship init zsh)"
 
 # WezTerm semantic zones (for Leader + y to copy last command output)
 _wezterm_osc133_precmd() {
@@ -41,16 +45,26 @@ _wezterm_osc133_preexec() {
 precmd_functions+=(_wezterm_osc133_precmd)
 preexec_functions+=(_wezterm_osc133_preexec)
 
-# zsh plugins (cache brew prefix for performance)
-BREW_PREFIX=$(brew --prefix)
-source $BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-source $BREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# zsh plugins
+if command -v brew &>/dev/null; then
+  # macOS (Homebrew)
+  BREW_PREFIX=$(brew --prefix)
+  source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  source "$BREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+else
+  # Linux (git clone)
+  ZSH_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+  [[ -f "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && \
+    source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [[ -f "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
+    source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
 
 # fzf
-source <(fzf --zsh)
+command -v fzf &>/dev/null && source <(fzf --zsh)
 
 # zoxide (smart cd)
-eval "$(zoxide init zsh)"
+command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 
 # git aliases
 alias gs='git switch'
