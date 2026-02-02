@@ -271,19 +271,6 @@ install_linux_extra_tools() {
     success "mise already installed"
   fi
 
-  # helix
-  if ! has hx; then
-    info "Installing helix..."
-    # Helix公式のインストール方法
-    if has snap; then
-      sudo snap install helix --classic || warn "Failed to install helix via snap"
-    else
-      warn "Please install helix manually: https://helix-editor.com"
-    fi
-  else
-    success "helix already installed"
-  fi
-
   # lazygit
   if ! has lazygit; then
     info "Installing lazygit..."
@@ -322,11 +309,10 @@ install_linux_extra_tools() {
   # neovim
   if ! has nvim; then
     info "Installing neovim..."
-    NVIM_VERSION=$(curl -s "https://api.github.com/repos/neovim/neovim/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
-    curl -Lo nvim-linux64.tar.gz "https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
-    sudo tar -C /opt -xzf nvim-linux64.tar.gz
-    sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
-    rm -f nvim-linux64.tar.gz
+    curl -Lo nvim-linux-x86_64.tar.gz "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz"
+    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+    sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+    rm -f nvim-linux-x86_64.tar.gz
   else
     success "neovim already installed"
   fi
