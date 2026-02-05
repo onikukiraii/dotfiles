@@ -174,3 +174,8 @@ auto_activate_venv() {
 autoload -U add-zsh-hook
 add-zsh-hook chpwd auto_activate_venv
 auto_activate_venv  # シェル起動時も実行
+
+# nvim aliases
+alias nv='nvim'
+alias v='nvim'
+alias vi='nvim'

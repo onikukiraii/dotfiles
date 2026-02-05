@@ -7,6 +7,7 @@ local backgrounds_dir = wezterm.config_dir .. "/backgrounds"
 local images = {
   backgrounds_dir .. "/shinobu.png",
   backgrounds_dir .. "/azusa.png",
+  backgrounds_dir .. "/free.png",
 }
 
 -- ランダムに選択
