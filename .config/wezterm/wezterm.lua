@@ -7,18 +7,16 @@ local backgrounds_dir = wezterm.config_dir .. "/backgrounds"
 local wallpaper_images = {
   backgrounds_dir .. "/shinobu.png",
   backgrounds_dir .. "/azusa.png",
+  backgrounds_dir .. "/free.png",
 }
 local current_wallpaper_index = 1
 
--- 壁紙をランダム変更するイベント
+-- 壁紙を順番に変更するイベント
 wezterm.on("change-wallpaper", function(window, pane)
-  -- 次の壁紙を選択（現在と異なるものを選ぶ）
-  if #wallpaper_images > 1 then
-    local new_index = current_wallpaper_index
-    while new_index == current_wallpaper_index do
-      new_index = math.random(#wallpaper_images)
-    end
-    current_wallpaper_index = new_index
+  -- 次の壁紙を選択（上から順番にループ）
+  current_wallpaper_index = current_wallpaper_index + 1
+  if current_wallpaper_index > #wallpaper_images then
+    current_wallpaper_index = 1
   end
 
   local new_image = wallpaper_images[current_wallpaper_index]
