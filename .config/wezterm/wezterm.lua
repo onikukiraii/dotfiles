@@ -53,7 +53,7 @@ end)
 
 config.automatically_reload_config = true
 config.font = wezterm.font_with_fallback({
-  "HackGen Console NF",
+  { family = "HackGen Console NF", weight = "Regular" },
 })
 config.font_size = 14.0
 config.use_ime = true
