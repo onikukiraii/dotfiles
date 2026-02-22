@@ -52,7 +52,10 @@ wezterm.on("window-close-requested", function(window, pane)
 end)
 
 config.automatically_reload_config = true
-config.font = wezterm.font("JetBrains Mono")
+config.font = wezterm.font_with_fallback({
+  "NotoMono Nerd Font",
+  "Noto Sans CJK JP",
+})
 config.font_size = 14.0
 config.use_ime = true
 

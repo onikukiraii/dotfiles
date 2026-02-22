@@ -101,6 +101,8 @@ install_macos_packages() {
 
   local casks=(
     karabiner-elements
+    font-noto-nerd-font
+    font-noto-sans-cjk-jp
   )
 
   for pkg in "${packages[@]}"; do
