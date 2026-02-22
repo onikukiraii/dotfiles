@@ -52,9 +52,7 @@ wezterm.on("window-close-requested", function(window, pane)
 end)
 
 config.automatically_reload_config = true
-config.font = wezterm.font_with_fallback({
-  { family = "HackGen Console NF", weight = "Regular" },
-})
+config.font = wezterm.font("JetBrains Mono")
 config.font_size = 14.0
 config.use_ime = true
 
