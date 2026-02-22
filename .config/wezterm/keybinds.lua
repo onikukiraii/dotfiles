@@ -243,7 +243,7 @@ return {
       key = "R",
       mods = "LEADER|SHIFT",
       action = wezterm.action_callback(function(win, pane)
-        resurrect.fuzzy_load(win, pane, function(id, label)
+        resurrect.fuzzy_loader.fuzzy_load(win, pane, function(id, label)
           local type = string.match(label, "^([^/]+)") -- "workspace" or "window"
           id = string.match(id, "([^/]+)$") -- session name
           if type == "workspace" then
