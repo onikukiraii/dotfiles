@@ -53,8 +53,7 @@ end)
 
 config.automatically_reload_config = true
 config.font = wezterm.font_with_fallback({
-  "NotoMono Nerd Font",
-  "Noto Sans CJK JP",
+  "HackGen Console NF",
 })
 config.font_size = 14.0
 config.use_ime = true
